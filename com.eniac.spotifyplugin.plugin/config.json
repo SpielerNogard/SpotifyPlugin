@@ -1,0 +1,9 @@
+{
+  "clientId": "87bbdc316a7b4a1cbd7ab704d9175e2c",
+  "clientSecret": "dce6e2c77edd465d8a7c7857e9365640",
+  "redirectUri": "http://127.0.0.1:8888/callback",
+  "accessToken": "BQBNmOCx_V8VuGcrLNT31-UAlQw4OF5r9h-ktjvt6korxFpjCqALFFczXtpSLnn-vBrLI8W0LLam5uwnkZH78llWm40BBl82jypLvGZffDtFboxKoRD1xYXDUFfqgu94OxE33qpBO3eHbXbIe8tIBzYXgPF7ppzEiInW6Ax1JBTocR05NG5plYIhjgxBLBoPlw1iZ88Q6rQ3kRF72deXpMBo0DRBn3iCEWVIsn1N70YfaUED38VXxJ_-DlYmv8X3vnQoQbbfKL0O6oq2eoqpR95te3nGQfR1kVguLcQfffIw",
+  "refreshToken": "AQBXNrYkaktyuMlghfLLfqQeDgPgyzrDOOU_Gmjy22KmkvlLrm3poI6uf3aS-7xm4QTrkBm8PMJ152u3JYcm59hQpb8cip3WMJcCADlDZ79Izk8Ufpfj6kTRPZHrDJ7MBqc",
+  "userName": "Aspen",
+  "tokenExpiresAt": "2025-12-05T16:29:07.059Z"
+}

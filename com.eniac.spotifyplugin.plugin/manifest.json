@@ -1,0 +1,523 @@
+{
+    "name": "SpotifyPlugin",
+    "uuid": "com.eniac.spotifyplugin",
+    "version": "1.0.0",
+    "author": "ENIAC",
+    "entry": "backend/plugin.cjs",
+    "description": "Spotify integration for Flexbar",
+    "repo": "https://github.com/ENIAC-Tech/SpotifyPlugin",
+    "sdk": {
+        "version": "1.0.0"
+    },
+    "software": {
+        "minimumVersion": "1.0.0"
+    },
+    "os": [
+        {
+            "platform": "mac",
+            "minimumVersion": "10.15"
+        },
+        {
+            "platform": "windows",
+            "minimumVersion": "10"
+        }
+    ],
+    "device": [
+        {
+            "name": "flexbar",
+            "version": "1.0.0"
+        }
+    ],
+    "configPage": "configPage",
+    "keyLibrary": {
+        "title": "$PluginName",
+        "style": {
+            "icon": "mdi mdi-spotify"
+        },
+        "children": [
+          {
+                "title": "$NowPlaying.Title",
+                "tip": "$NowPlaying.Tip",
+                "cid": "com.eniac.spotifyplugin.nowplaying",
+                "config": {
+                    "keyType": "default",
+                    "clickable": false,
+                    "platform": ["windows", "mac"]
+                },
+                "style": {
+                    "icon": "mdi mdi-music",
+                    "width": 600,
+                    "flags": ["disable-bg", "disable-fg", "disable-icon-sel", "disable-layout-sel"]
+                },
+                "data": {
+                    "showTitle": true,
+                    "showArtist": true,
+                    "showAlbum": true,
+                    "showProgress": true
+                }
+            },
+            {
+                "title": "$Like.Title",
+                "tip": "$Like.Tip",
+                "cid": "com.eniac.spotifyplugin.like",
+                "config": {
+                    "keyType": "multiState",
+                    "platform": ["windows", "mac"]
+                },
+                "style": {
+                    "icon": "mdi mdi-heart-outline",
+                    "width": 240,
+                    "multiStyle": [
+                        {
+                            "icon": "mdi mdi-heart-outline",
+                            "fgColor": "#FFFFFF"
+                        },
+                        {
+                            "icon": "mdi mdi-heart",
+                            "fgColor": "#1DB954"
+                        }
+                    ]
+                },
+                "data": {}
+            },
+            {
+                "title": "$Shuffle.Title",
+                "tip": "$Shuffle.Tip",
+                "cid": "com.eniac.spotifyplugin.shuffle",
+                "config": {
+                    "keyType": "multiState",
+                    "platform": ["windows", "mac"]
+                },
+                "style": {
+                    "icon": "mdi mdi-shuffle",
+                    "width": 240,
+                    "multiStyle": [
+                        {
+                            "icon": "mdi mdi-shuffle",
+                            "fgColor": "#FFFFFF"
+                        },
+                        {
+                            "icon": "mdi mdi-shuffle",
+                            "fgColor": "#1DB954"
+                        }
+                    ]
+                },
+                "data": {}
+            },
+            {
+                "title": "$Repeat.Title",
+                "tip": "$Repeat.Tip",
+                "cid": "com.eniac.spotifyplugin.repeat",
+                "config": {
+                    "keyType": "multiState",
+                    "platform": ["windows", "mac"]
+                },
+                "style": {
+                    "icon": "mdi mdi-repeat",
+                    "width": 240,
+                    "multiStyle": [
+                        {
+                            "icon": "mdi mdi-repeat",
+                            "fgColor": "#FFFFFF"
+                        },
+                        {
+                            "icon": "mdi mdi-repeat",
+                            "fgColor": "#1DB954"
+                        },
+                        {
+                            "icon": "mdi mdi-repeat-once",
+                            "fgColor": "#1DB954"
+                        }
+                    ]
+                },
+                "data": {}
+            },
+            {
+                "title": "$Previous.Title",
+                "tip": "$Previous.Tip",
+                "cid": "com.eniac.spotifyplugin.previous",
+                "config": {
+                    "keyType": "default",
+                    "clickable": true,
+                    "platform": ["windows", "mac"]
+                },
+                "style": {
+                    "icon": "mdi mdi-skip-previous",
+                    "width": 240
+                },
+                "data": {}
+            },
+            {
+                "title": "$Next.Title",
+                "tip": "$Next.Tip",
+                "cid": "com.eniac.spotifyplugin.next",
+              "config": {
+                  "keyType": "default",
+                  "clickable": true,
+                    "platform": ["windows", "mac"]
+              },
+              "style": {
+                    "icon": "mdi mdi-skip-next",
+                  "width": 240
+              },
+                "data": {}
+            },
+            {
+                "title": "$PlayPause.Title",
+                "tip": "$PlayPause.Tip",
+                "cid": "com.eniac.spotifyplugin.playpause",
+                "config": {
+                    "keyType": "multiState",
+                    "platform": ["windows", "mac"]
+                },
+                "style": {
+                    "icon": "mdi mdi-play",
+                    "width": 240,
+                    "multiStyle": [
+                        {
+                            "icon": "mdi mdi-play",
+                            "fgColor": "#FFFFFF"
+                        },
+                        {
+                            "icon": "mdi mdi-pause",
+                            "fgColor": "#1DB954"
+              }
+                    ]
+                },
+                "data": {}
+          }
+        ]
+    },
+    "local": {
+        "en": {
+            "PluginName": "Spotify",
+            "NowPlaying": {
+                "Title": "Now Playing",
+                "Tip": "Display current playback information",
+                "UI": {
+                    "ShowTitle": "Show Track Title",
+                    "ShowArtist": "Show Artist",
+                    "ShowAlbum": "Show Album",
+                    "ShowProgress": "Show Progress Bar"
+                }
+            },
+            "Like": {
+                "Title": "Like",
+                "Tip": "Add or remove current track from your library"
+            },
+            "Shuffle": {
+                "Title": "Shuffle",
+                "Tip": "Toggle shuffle playback"
+            },
+            "Repeat": {
+                "Title": "Repeat",
+                "Tip": "Toggle repeat mode (off/context/track)"
+            },
+            "Previous": {
+                "Title": "Previous",
+                "Tip": "Play previous track"
+            },
+            "Next": {
+                "Title": "Next",
+                "Tip": "Play next track"
+            },
+            "PlayPause": {
+                "Title": "Play/Pause",
+                "Tip": "Toggle playback"
+            },
+            "Config": {
+                "Title": "Spotify Settings",
+                "Step1": {
+                    "Title": "Create Spotify App",
+                    "Description": "First, you need to create a Spotify application to get your credentials.",
+                    "Instructions": "1. Go to Spotify Developer Dashboard\n2. Log in with your Spotify account\n3. Click \"Create App\"\n4. Fill in App name and description\n5. Set Redirect URI to:",
+                    "DashboardUrl": "Dashboard URL",
+                    "Copy": "Copy to clipboard",
+                    "Button": "Open Spotify Dashboard"
+                },
+                "Step2": {
+                    "Title": "Enter Credentials",
+                    "Description": "Copy your Client ID and Client Secret from the Spotify app settings.",
+                    "ClientId": "Client ID",
+                    "ClientSecret": "Client Secret",
+                    "RedirectUri": "Redirect URI"
+                },
+                "Step3": {
+                    "Title": "Connect Spotify",
+                    "Description": "Click the button below to authorize the plugin with your Spotify account.",
+                    "Button": "Connect to Spotify",
+                    "Connected": "Connected",
+                    "NotConnected": "Not Connected",
+                    "Disconnect": "Disconnect"
+                },
+                "Next": "Next",
+                "Back": "Back",
+                "Save": "Save"
+            }
+        },
+        "zh-CN": {
+            "PluginName": "Spotify",
+            "NowPlaying": {
+                "Title": "正在播放",
+                "Tip": "显示当前播放信息",
+                "UI": {
+                    "ShowTitle": "显示歌曲名称",
+                    "ShowArtist": "显示艺术家",
+                    "ShowAlbum": "显示专辑",
+                    "ShowProgress": "显示进度条"
+                }
+            },
+            "Like": {
+                "Title": "喜欢",
+                "Tip": "添加或移除当前歌曲到音乐库"
+            },
+            "Shuffle": {
+                "Title": "随机播放",
+                "Tip": "切换随机播放模式"
+            },
+            "Repeat": {
+                "Title": "循环播放",
+                "Tip": "切换循环模式（关闭/列表循环/单曲循环）"
+            },
+            "Previous": {
+                "Title": "上一曲",
+                "Tip": "播放上一首歌曲"
+            },
+            "Next": {
+                "Title": "下一曲",
+                "Tip": "播放下一首歌曲"
+            },
+            "PlayPause": {
+                "Title": "播放/暂停",
+                "Tip": "切换播放状态"
+            },
+            "Config": {
+                "Title": "Spotify 设置",
+                "Step1": {
+                    "Title": "创建 Spotify 应用",
+                    "Description": "首先，您需要创建一个 Spotify 应用来获取凭证。",
+                    "Instructions": "1. 前往 Spotify 开发者控制台\n2. 使用您的 Spotify 账号登录\n3. 点击「创建应用」\n4. 填写应用名称和描述\n5. 设置重定向 URI 为：",
+                    "DashboardUrl": "控制台地址",
+                    "Copy": "复制到剪贴板",
+                    "Button": "打开 Spotify 控制台"
+                },
+                "Step2": {
+                    "Title": "输入凭证",
+                    "Description": "从 Spotify 应用设置中复制 Client ID 和 Client Secret。",
+                    "ClientId": "Client ID",
+                    "ClientSecret": "Client Secret",
+                    "RedirectUri": "重定向 URI"
+                },
+                "Step3": {
+                    "Title": "连接 Spotify",
+                    "Description": "点击下方按钮使用您的 Spotify 账号授权插件。",
+                    "Button": "连接 Spotify",
+                    "Connected": "已连接",
+                    "NotConnected": "未连接",
+                    "Disconnect": "断开连接"
+                },
+                "Next": "下一步",
+                "Back": "上一步",
+                "Save": "保存"
+            }
+        },
+        "ja": {
+            "PluginName": "Spotify",
+            "NowPlaying": {
+                "Title": "再生中",
+                "Tip": "現在の再生情報を表示",
+                "UI": {
+                    "ShowTitle": "曲名を表示",
+                    "ShowArtist": "アーティストを表示",
+                    "ShowAlbum": "アルバムを表示",
+                    "ShowProgress": "進行バーを表示"
+                }
+            },
+            "Like": {
+                "Title": "お気に入り",
+                "Tip": "現在の曲をライブラリに追加/削除"
+            },
+            "Shuffle": {
+                "Title": "シャッフル",
+                "Tip": "シャッフル再生を切り替え"
+            },
+            "Repeat": {
+                "Title": "リピート",
+                "Tip": "リピートモードを切り替え（オフ/全曲/1曲）"
+            },
+            "Previous": {
+                "Title": "前の曲",
+                "Tip": "前の曲を再生"
+            },
+            "Next": {
+                "Title": "次の曲",
+                "Tip": "次の曲を再生"
+            },
+            "PlayPause": {
+                "Title": "再生/一時停止",
+                "Tip": "再生を切り替え"
+            },
+            "Config": {
+                "Title": "Spotify 設定",
+                "Step1": {
+                    "Title": "Spotifyアプリを作成",
+                    "Description": "まず、認証情報を取得するためにSpotifyアプリを作成する必要があります。",
+                    "Instructions": "1. Spotify Developer Dashboardにアクセス\n2. Spotifyアカウントでログイン\n3.「アプリを作成」をクリック\n4. アプリ名と説明を入力\n5. リダイレクトURIを設定：",
+                    "DashboardUrl": "ダッシュボードURL",
+                    "Copy": "クリップボードにコピー",
+                    "Button": "Spotifyダッシュボードを開く"
+                },
+                "Step2": {
+                    "Title": "認証情報を入力",
+                    "Description": "SpotifyアプリからClient IDとClient Secretをコピーします。",
+                    "ClientId": "Client ID",
+                    "ClientSecret": "Client Secret",
+                    "RedirectUri": "リダイレクトURI"
+                },
+                "Step3": {
+                    "Title": "Spotifyに接続",
+                    "Description": "下のボタンをクリックして、Spotifyアカウントでプラグインを認証します。",
+                    "Button": "Spotifyに接続",
+                    "Connected": "接続済み",
+                    "NotConnected": "未接続",
+                    "Disconnect": "切断"
+                },
+                "Next": "次へ",
+                "Back": "戻る",
+                "Save": "保存"
+            }
+        },
+        "fr": {
+            "PluginName": "Spotify",
+            "NowPlaying": {
+                "Title": "En lecture",
+                "Tip": "Afficher les informations de lecture",
+                "UI": {
+                    "ShowTitle": "Afficher le titre",
+                    "ShowArtist": "Afficher l'artiste",
+                    "ShowAlbum": "Afficher l'album",
+                    "ShowProgress": "Afficher la barre de progression"
+                }
+            },
+            "Like": {
+                "Title": "J'aime",
+                "Tip": "Ajouter ou retirer le titre de votre bibliothèque"
+            },
+            "Shuffle": {
+                "Title": "Aléatoire",
+                "Tip": "Activer/désactiver la lecture aléatoire"
+            },
+            "Repeat": {
+                "Title": "Répéter",
+                "Tip": "Changer le mode de répétition (off/tout/titre)"
+            },
+            "Previous": {
+                "Title": "Précédent",
+                "Tip": "Lire le titre précédent"
+            },
+            "Next": {
+                "Title": "Suivant",
+                "Tip": "Lire le titre suivant"
+            },
+            "PlayPause": {
+                "Title": "Lecture/Pause",
+                "Tip": "Basculer la lecture"
+            },
+            "Config": {
+                "Title": "Paramètres Spotify",
+                "Step1": {
+                    "Title": "Créer une application Spotify",
+                    "Description": "D'abord, vous devez créer une application Spotify pour obtenir vos identifiants.",
+                    "Instructions": "1. Allez sur Spotify Developer Dashboard\n2. Connectez-vous avec votre compte Spotify\n3. Cliquez sur « Créer une app »\n4. Remplissez le nom et la description\n5. Définissez l'URI de redirection :",
+                    "DashboardUrl": "URL du tableau de bord",
+                    "Copy": "Copier dans le presse-papiers",
+                    "Button": "Ouvrir Spotify Dashboard"
+                },
+                "Step2": {
+                    "Title": "Entrer les identifiants",
+                    "Description": "Copiez votre Client ID et Client Secret depuis les paramètres de l'app Spotify.",
+                    "ClientId": "Client ID",
+                    "ClientSecret": "Client Secret",
+                    "RedirectUri": "URI de redirection"
+                },
+                "Step3": {
+                    "Title": "Connecter Spotify",
+                    "Description": "Cliquez sur le bouton ci-dessous pour autoriser le plugin avec votre compte Spotify.",
+                    "Button": "Se connecter à Spotify",
+                    "Connected": "Connecté",
+                    "NotConnected": "Non connecté",
+                    "Disconnect": "Déconnecter"
+                },
+                "Next": "Suivant",
+                "Back": "Retour",
+                "Save": "Enregistrer"
+            }
+        },
+        "de": {
+            "PluginName": "Spotify",
+            "NowPlaying": {
+                "Title": "Aktuelle Wiedergabe",
+                "Tip": "Aktuelle Wiedergabeinformationen anzeigen",
+                "UI": {
+                    "ShowTitle": "Titel anzeigen",
+                    "ShowArtist": "Künstler anzeigen",
+                    "ShowAlbum": "Album anzeigen",
+                    "ShowProgress": "Fortschrittsbalken anzeigen"
+                }
+            },
+            "Like": {
+                "Title": "Gefällt mir",
+                "Tip": "Aktuellen Titel zur Bibliothek hinzufügen/entfernen"
+            },
+            "Shuffle": {
+                "Title": "Zufallswiedergabe",
+                "Tip": "Zufallswiedergabe umschalten"
+            },
+            "Repeat": {
+                "Title": "Wiederholen",
+                "Tip": "Wiederholungsmodus umschalten (aus/alle/eins)"
+            },
+            "Previous": {
+                "Title": "Vorheriger",
+                "Tip": "Vorherigen Titel abspielen"
+            },
+            "Next": {
+                "Title": "Nächster",
+                "Tip": "Nächsten Titel abspielen"
+            },
+            "PlayPause": {
+                "Title": "Wiedergabe/Pause",
+                "Tip": "Wiedergabe umschalten"
+            },
+            "Config": {
+                "Title": "Spotify-Einstellungen",
+                "Step1": {
+                    "Title": "Spotify-App erstellen",
+                    "Description": "Zuerst müssen Sie eine Spotify-Anwendung erstellen, um Ihre Anmeldedaten zu erhalten.",
+                    "Instructions": "1. Gehen Sie zum Spotify Developer Dashboard\n2. Melden Sie sich mit Ihrem Spotify-Konto an\n3. Klicken Sie auf „App erstellen\"\n4. Geben Sie App-Name und Beschreibung ein\n5. Setzen Sie die Redirect-URI auf:",
+                    "DashboardUrl": "Dashboard-URL",
+                    "Copy": "In Zwischenablage kopieren",
+                    "Button": "Spotify Dashboard öffnen"
+                },
+                "Step2": {
+                    "Title": "Anmeldedaten eingeben",
+                    "Description": "Kopieren Sie Ihre Client-ID und das Client-Secret aus den Spotify-App-Einstellungen.",
+                    "ClientId": "Client-ID",
+                    "ClientSecret": "Client-Secret",
+                    "RedirectUri": "Redirect-URI"
+                },
+                "Step3": {
+                    "Title": "Mit Spotify verbinden",
+                    "Description": "Klicken Sie auf die Schaltfläche unten, um das Plugin mit Ihrem Spotify-Konto zu autorisieren.",
+                    "Button": "Mit Spotify verbinden",
+                    "Connected": "Verbunden",
+                    "NotConnected": "Nicht verbunden",
+                    "Disconnect": "Trennen"
+                },
+                "Next": "Weiter",
+                "Back": "Zurück",
+                "Save": "Speichern"
+            }
+        }
+    }
+}

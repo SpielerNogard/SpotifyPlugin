@@ -1,0 +1,326 @@
+<template>
+  <v-container class="spotify-config">
+    <v-card class="mx-auto" max-width="600">
+      <v-card-title class="text-h5 spotify-header">
+        <v-icon class="mr-2">mdi-spotify</v-icon>
+        {{ $t('Config.Title') }}
+      </v-card-title>
+
+      <v-stepper v-model="currentStep" :items="stepItems" alt-labels>
+        <template v-slot:item.1>
+          <v-card flat>
+            <v-card-text>
+              <p class="text-body-1 mb-4">{{ $t('Config.Step1.Description') }}</p>
+              <v-alert type="info" variant="tonal" class="mb-4">
+                <pre class="instructions">{{ $t('Config.Step1.Instructions') }}</pre>
+                <v-chip color="primary" class="mt-2 mr-2" label>
+                  {{ redirectUri }}
+                </v-chip>
+                <v-chip 
+                  color="secondary" 
+                  class="mt-2" 
+                  label
+                  append-icon="mdi-content-copy"
+                  @click="copyToClipboard(spotifyDashboardUrl)"
+                >
+                  {{ spotifyDashboardUrl }}
+                </v-chip>
+              </v-alert>
+              
+              <v-btn
+                color="#1DB954"
+                variant="elevated"
+                @click="openSpotifyDashboard"
+                prepend-icon="mdi-open-in-new"
+              >
+                {{ $t('Config.Step1.Button') }}
+              </v-btn>
+            </v-card-text>
+          </v-card>
+        </template>
+
+        <template v-slot:item.2>
+          <v-card flat>
+            <v-card-text>
+              <p class="text-body-1 mb-4">{{ $t('Config.Step2.Description') }}</p>
+              <v-text-field
+                v-model="config.clientId"
+                :label="$t('Config.Step2.ClientId')"
+                variant="outlined"
+                class="mb-3"
+                hide-details
+              />
+              <v-text-field
+                v-model="config.clientSecret"
+                :label="$t('Config.Step2.ClientSecret')"
+                variant="outlined"
+                class="mb-3"
+                type="password"
+                hide-details
+              />
+              <v-text-field
+                v-model="config.redirectUri"
+                :label="$t('Config.Step2.RedirectUri')"
+                variant="outlined"
+                hide-details
+              />
+            </v-card-text>
+          </v-card>
+        </template>
+
+        <template v-slot:item.3>
+          <v-card flat>
+            <v-card-text>
+              <p class="text-body-1 mb-4">{{ $t('Config.Step3.Description') }}</p>
+              
+              <v-alert
+                :type="isConnected ? 'success' : 'warning'"
+                variant="tonal"
+                class="mb-4"
+              >
+                <div class="d-flex align-center">
+                  <span>{{ isConnected ? $t('Config.Step3.Connected') : $t('Config.Step3.NotConnected') }}</span>
+                  <span v-if="isConnected && userName" class="ml-2">- {{ userName }}</span>
+                </div>
+              </v-alert>
+
+              <div class="d-flex gap-3">
+                <v-btn
+                  v-if="!isConnected"
+                  color="#1DB954"
+                  variant="elevated"
+                  @click="connectSpotify"
+                  :loading="isConnecting"
+                  prepend-icon="mdi-spotify"
+                >
+                  {{ $t('Config.Step3.Button') }}
+                </v-btn>
+                <v-btn
+                  v-else
+                  color="error"
+                  variant="outlined"
+                  @click="disconnectSpotify"
+                  prepend-icon="mdi-logout"
+                >
+                  {{ $t('Config.Step3.Disconnect') }}
+                </v-btn>
+              </div>
+            </v-card-text>
+          </v-card>
+        </template>
+
+        <template v-slot:actions>
+          <v-stepper-actions
+            @click:prev="currentStep--"
+            @click:next="handleNext"
+            :prev-text="$t('Config.Back')"
+            :next-text="currentStep === 3 ? $t('Config.Save') : $t('Config.Next')"
+            :disabled="nextDisabled"
+          />
+        </template>
+      </v-stepper>
+    </v-card>
+
+  </v-container>
+</template>
+
+<script>
+export default {
+  name: 'ConfigPage',
+  data() {
+    return {
+      currentStep: 1,
+      config: {
+        clientId: '',
+        clientSecret: '',
+        redirectUri: 'http://127.0.0.1:8888/callback'
+      },
+      isConnected: false,
+      isConnecting: false,
+      userName: '',
+      spotifyDashboardUrl: 'https://developer.spotify.com/dashboard'
+    };
+  },
+  computed: {
+    stepItems() {
+      return [
+        { title: this.$t('Config.Step1.Title'), value: 1 },
+        { title: this.$t('Config.Step2.Title'), value: 2 },
+        { title: this.$t('Config.Step3.Title'), value: 3 }
+      ];
+    },
+    redirectUri() {
+      return this.config.redirectUri || 'http://127.0.0.1:8888/callback';
+    },
+    nextDisabled() {
+      if (this.currentStep === 2) {
+        return !this.config.clientId || !this.config.clientSecret;
+      }
+      return false;
+    }
+  },
+  methods: {
+    async openSpotifyDashboard() {
+      try {
+        await this.$fd.sendToBackend({
+          action: 'openUrl',
+          url: this.spotifyDashboardUrl
+        });
+      } catch (error) {
+        this.$fd.error('Failed to open URL: ' + error.message);
+      }
+    },
+    async copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        this.$fd.info('Copied to clipboard');
+      } catch (error) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        this.$fd.info('Copied to clipboard');
+      }
+    },
+    async handleNext() {
+      if (this.currentStep === 2) {
+        // Save credentials before moving to step 3
+        await this.saveConfig();
+      }
+      if (this.currentStep === 3) {
+        // Final save
+        await this.saveConfig();
+        return;
+      }
+      this.currentStep++;
+    },
+    async saveConfig() {
+      try {
+        await this.$fd.sendToBackend({
+          action: 'saveConfig',
+          data: {
+            clientId: this.config.clientId,
+            clientSecret: this.config.clientSecret,
+            redirectUri: this.config.redirectUri
+          }
+        });
+        this.$fd.info('Configuration saved');
+      } catch (error) {
+        this.$fd.error('Failed to save configuration: ' + error.message);
+      }
+    },
+    async connectSpotify() {
+      if (!this.config.clientId || !this.config.clientSecret) {
+        this.$fd.error('Please enter Client ID and Client Secret first');
+        return;
+      }
+
+      this.isConnecting = true;
+      try {
+        const response = await this.$fd.sendToBackend({
+          action: 'startOAuth'
+        });
+        
+        if (response && response.success) {
+          // Backend will open the login URL in system browser
+          // Poll for connection status
+          this.pollConnectionStatus();
+        } else {
+          this.$fd.error('Failed to start OAuth: ' + (response?.error || 'Unknown error'));
+          this.isConnecting = false;
+        }
+      } catch (error) {
+        this.$fd.error('Failed to start OAuth: ' + error.message);
+        this.isConnecting = false;
+      }
+    },
+    async pollConnectionStatus() {
+      const maxAttempts = 60; // 60 seconds timeout
+      let attempts = 0;
+      
+      const checkStatus = async () => {
+        try {
+          const response = await this.$fd.sendToBackend({
+            action: 'checkConnection'
+          });
+          
+          if (response && response.connected) {
+            this.isConnected = true;
+            this.userName = response.userName || '';
+            this.isConnecting = false;
+            return;
+          }
+          
+          attempts++;
+          if (attempts < maxAttempts && this.isConnecting) {
+            setTimeout(checkStatus, 1000);
+          } else {
+            this.isConnecting = false;
+          }
+        } catch (error) {
+          this.isConnecting = false;
+        }
+      };
+      
+      checkStatus();
+    },
+    async disconnectSpotify() {
+      try {
+        await this.$fd.sendToBackend({
+          action: 'disconnect'
+        });
+        this.isConnected = false;
+        this.userName = '';
+      } catch (error) {
+        this.$fd.error('Failed to disconnect: ' + error.message);
+      }
+    },
+    async loadConfig() {
+      try {
+        const response = await this.$fd.sendToBackend({
+          action: 'getConfig'
+        });
+        
+        if (response) {
+          this.config.clientId = response.clientId || '';
+          this.config.clientSecret = response.clientSecret || '';
+          this.config.redirectUri = response.redirectUri || 'http://127.0.0.1:8888/callback';
+          this.isConnected = response.connected || false;
+          this.userName = response.userName || '';
+        }
+      } catch (error) {
+        this.$fd.error('Failed to load configuration: ' + error.message);
+      }
+    }
+  },
+  mounted() {
+    this.$fd.info('Spotify Config Page loaded');
+    this.loadConfig();
+  }
+};
+</script>
+
+<style scoped>
+.spotify-config {
+  padding: 16px;
+}
+
+.spotify-header {
+  background: linear-gradient(135deg, #1DB954 0%, #191414 100%);
+  color: white;
+}
+
+.instructions {
+  white-space: pre-wrap;
+  font-family: inherit;
+  margin: 0;
+}
+
+.gap-3 {
+  gap: 12px;
+}
+</style>
+
