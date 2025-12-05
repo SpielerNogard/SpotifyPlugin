@@ -3,8 +3,12 @@
 
 Spotify intergation
 
-## Installation
+<img width="3000" height="152" alt="Spotify" src="https://github.com/user-attachments/assets/9e77180a-0b78-46af-a667-a7db303464b8" />
 
+> Note: Shuffle, repeat, previous/next track, and pause/play all require Spotify Premium.
+
+
+## Installation
 
 ### **Prerequisites**
 
