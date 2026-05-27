@@ -234,7 +234,7 @@
               </div>
 
               <v-card variant="outlined" class="log-box">
-                <pre v-if="logLines.length" ref="logPre" class="log-content">{{ logLines.join('\n') }}</pre>
+                <pre v-if="logLines.length" ref="logPre" class="log-content">{{ logText }}</pre>
                 <div v-else class="pa-4 text-center text-medium-emphasis">
                   {{ $t('Config.Logs.Empty') }}
                 </div>
@@ -307,6 +307,9 @@ export default {
         { title: this.$t('Config.Logs.LevelWarn'), value: 'warn' },
         { title: this.$t('Config.Logs.LevelError'), value: 'error' },
       ];
+    },
+    logText() {
+      return this.logLines.join('\n');
     },
   },
   methods: {
