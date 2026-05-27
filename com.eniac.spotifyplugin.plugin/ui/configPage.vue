@@ -6,121 +6,137 @@
         {{ $t('Config.Title') }}
       </v-card-title>
 
-      <v-stepper v-model="currentStep" :items="stepItems" alt-labels>
-        <template v-slot:item.1>
+      <v-tabs v-model="activeTab" bg-color="transparent" grow>
+        <v-tab value="setup" prepend-icon="mdi-cog-outline">{{ $t('Config.Tabs.Setup') }}</v-tab>
+        <v-tab value="settings" prepend-icon="mdi-tune">{{ $t('Config.Tabs.Settings') }}</v-tab>
+        <v-tab value="logs" prepend-icon="mdi-text-box-search-outline">{{ $t('Config.Tabs.Logs') }}</v-tab>
+      </v-tabs>
+
+      <v-window v-model="activeTab">
+        <v-window-item value="setup">
+          <v-stepper v-model="currentStep" :items="stepItems" alt-labels>
+            <template v-slot:item.1>
+              <v-card flat>
+                <v-card-text>
+                  <p class="text-body-1 mb-4">{{ $t('Config.Step1.Description') }}</p>
+                  <v-alert type="info" variant="tonal" class="mb-4">
+                    <pre class="instructions">{{ $t('Config.Step1.Instructions') }}</pre>
+                    <v-chip color="primary" class="mt-2 mr-2" label>
+                      {{ redirectUri }}
+                    </v-chip>
+                    <v-chip
+                      color="secondary"
+                      class="mt-2"
+                      label
+                      append-icon="mdi-content-copy"
+                      @click="copyToClipboard(spotifyDashboardUrl)"
+                    >
+                      {{ spotifyDashboardUrl }}
+                    </v-chip>
+                  </v-alert>
+
+                  <v-btn
+                    color="#1DB954"
+                    variant="elevated"
+                    @click="openSpotifyDashboard"
+                    prepend-icon="mdi-open-in-new"
+                  >
+                    {{ $t('Config.Step1.Button') }}
+                  </v-btn>
+                </v-card-text>
+              </v-card>
+            </template>
+
+            <template v-slot:item.2>
+              <v-card flat>
+                <v-card-text>
+                  <p class="text-body-1 mb-4">{{ $t('Config.Step2.Description') }}</p>
+                  <v-text-field
+                    v-model="config.clientId"
+                    :label="$t('Config.Step2.ClientId')"
+                    variant="outlined"
+                    class="mb-3"
+                    hide-details
+                  />
+                  <v-text-field
+                    v-model="config.clientSecret"
+                    :label="$t('Config.Step2.ClientSecret')"
+                    variant="outlined"
+                    class="mb-3"
+                    type="password"
+                    hide-details
+                  />
+                  <v-text-field
+                    v-model="config.redirectUri"
+                    :label="$t('Config.Step2.RedirectUri')"
+                    variant="outlined"
+                    hide-details
+                  />
+                </v-card-text>
+              </v-card>
+            </template>
+
+            <template v-slot:item.3>
+              <v-card flat>
+                <v-card-text>
+                  <p class="text-body-1 mb-4">{{ $t('Config.Step3.Description') }}</p>
+
+                  <v-alert
+                    :type="isConnected ? 'success' : 'warning'"
+                    variant="tonal"
+                    class="mb-4"
+                  >
+                    <div class="d-flex align-center">
+                      <span>{{ isConnected ? $t('Config.Step3.Connected') : $t('Config.Step3.NotConnected') }}</span>
+                      <span v-if="isConnected && userName" class="ml-2">- {{ userName }}</span>
+                    </div>
+                  </v-alert>
+
+                  <v-btn
+                    v-if="!isConnected"
+                    color="#1DB954"
+                    variant="elevated"
+                    @click="connectSpotify"
+                    :loading="isConnecting"
+                    prepend-icon="mdi-spotify"
+                  >
+                    {{ $t('Config.Step3.Button') }}
+                  </v-btn>
+                </v-card-text>
+              </v-card>
+            </template>
+
+            <template v-slot:actions>
+              <v-stepper-actions
+                @click:prev="currentStep--"
+                @click:next="handleNext"
+                :prev-text="$t('Config.Back')"
+                :next-text="currentStep === 3 ? $t('Config.Save') : $t('Config.Next')"
+                :disabled="nextDisabled"
+              />
+            </template>
+          </v-stepper>
+        </v-window-item>
+
+        <v-window-item value="settings">
           <v-card flat>
             <v-card-text>
-              <p class="text-body-1 mb-4">{{ $t('Config.Step1.Description') }}</p>
-              <v-alert type="info" variant="tonal" class="mb-4">
-                <pre class="instructions">{{ $t('Config.Step1.Instructions') }}</pre>
-                <v-chip color="primary" class="mt-2 mr-2" label>
-                  {{ redirectUri }}
-                </v-chip>
-                <v-chip 
-                  color="secondary" 
-                  class="mt-2" 
-                  label
-                  append-icon="mdi-content-copy"
-                  @click="copyToClipboard(spotifyDashboardUrl)"
-                >
-                  {{ spotifyDashboardUrl }}
-                </v-chip>
-              </v-alert>
-              
-              <v-btn
-                color="#1DB954"
-                variant="elevated"
-                @click="openSpotifyDashboard"
-                prepend-icon="mdi-open-in-new"
-              >
-                {{ $t('Config.Step1.Button') }}
-              </v-btn>
+              <!-- Settings content added in Task 8 -->
+              <p class="text-body-2 text-medium-emphasis">Settings (Task 8)</p>
             </v-card-text>
           </v-card>
-        </template>
+        </v-window-item>
 
-        <template v-slot:item.2>
+        <v-window-item value="logs">
           <v-card flat>
             <v-card-text>
-              <p class="text-body-1 mb-4">{{ $t('Config.Step2.Description') }}</p>
-              <v-text-field
-                v-model="config.clientId"
-                :label="$t('Config.Step2.ClientId')"
-                variant="outlined"
-                class="mb-3"
-                hide-details
-              />
-              <v-text-field
-                v-model="config.clientSecret"
-                :label="$t('Config.Step2.ClientSecret')"
-                variant="outlined"
-                class="mb-3"
-                type="password"
-                hide-details
-              />
-              <v-text-field
-                v-model="config.redirectUri"
-                :label="$t('Config.Step2.RedirectUri')"
-                variant="outlined"
-                hide-details
-              />
+              <!-- Logs content added in Task 9 -->
+              <p class="text-body-2 text-medium-emphasis">Logs (Task 9)</p>
             </v-card-text>
           </v-card>
-        </template>
-
-        <template v-slot:item.3>
-          <v-card flat>
-            <v-card-text>
-              <p class="text-body-1 mb-4">{{ $t('Config.Step3.Description') }}</p>
-              
-              <v-alert
-                :type="isConnected ? 'success' : 'warning'"
-                variant="tonal"
-                class="mb-4"
-              >
-                <div class="d-flex align-center">
-                  <span>{{ isConnected ? $t('Config.Step3.Connected') : $t('Config.Step3.NotConnected') }}</span>
-                  <span v-if="isConnected && userName" class="ml-2">- {{ userName }}</span>
-                </div>
-              </v-alert>
-
-              <div class="d-flex gap-3">
-                <v-btn
-                  v-if="!isConnected"
-                  color="#1DB954"
-                  variant="elevated"
-                  @click="connectSpotify"
-                  :loading="isConnecting"
-                  prepend-icon="mdi-spotify"
-                >
-                  {{ $t('Config.Step3.Button') }}
-                </v-btn>
-                <v-btn
-                  v-else
-                  color="error"
-                  variant="outlined"
-                  @click="disconnectSpotify"
-                  prepend-icon="mdi-logout"
-                >
-                  {{ $t('Config.Step3.Disconnect') }}
-                </v-btn>
-              </div>
-            </v-card-text>
-          </v-card>
-        </template>
-
-        <template v-slot:actions>
-          <v-stepper-actions
-            @click:prev="currentStep--"
-            @click:next="handleNext"
-            :prev-text="$t('Config.Back')"
-            :next-text="currentStep === 3 ? $t('Config.Save') : $t('Config.Next')"
-            :disabled="nextDisabled"
-          />
-        </template>
-      </v-stepper>
+        </v-window-item>
+      </v-window>
     </v-card>
-
   </v-container>
 </template>
 
@@ -129,6 +145,7 @@ export default {
   name: 'ConfigPage',
   data() {
     return {
+      activeTab: 'setup',
       currentStep: 1,
       config: {
         clientId: '',
