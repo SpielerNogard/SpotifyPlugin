@@ -6,97 +6,175 @@
         {{ $t('Config.Title') }}
       </v-card-title>
 
-      <v-stepper v-model="currentStep" :items="stepItems" alt-labels>
-        <template v-slot:item.1>
-          <v-card flat>
-            <v-card-text>
-              <p class="text-body-1 mb-4">{{ $t('Config.Step1.Description') }}</p>
-              <v-alert type="info" variant="tonal" class="mb-4">
-                <pre class="instructions">{{ $t('Config.Step1.Instructions') }}</pre>
-                <v-chip color="primary" class="mt-2 mr-2" label>
-                  {{ redirectUri }}
-                </v-chip>
-                <v-chip 
-                  color="secondary" 
-                  class="mt-2" 
-                  label
-                  append-icon="mdi-content-copy"
-                  @click="copyToClipboard(spotifyDashboardUrl)"
-                >
-                  {{ spotifyDashboardUrl }}
-                </v-chip>
-              </v-alert>
-              
-              <v-btn
-                color="#1DB954"
-                variant="elevated"
-                @click="openSpotifyDashboard"
-                prepend-icon="mdi-open-in-new"
-              >
-                {{ $t('Config.Step1.Button') }}
-              </v-btn>
-            </v-card-text>
-          </v-card>
-        </template>
+      <v-tabs v-model="activeTab" bg-color="transparent" grow>
+        <v-tab value="setup" prepend-icon="mdi-cog-outline">{{ $t('Config.Tabs.Setup') }}</v-tab>
+        <v-tab value="settings" prepend-icon="mdi-tune">{{ $t('Config.Tabs.Settings') }}</v-tab>
+        <v-tab value="logs" prepend-icon="mdi-text-box-search-outline">{{ $t('Config.Tabs.Logs') }}</v-tab>
+      </v-tabs>
 
-        <template v-slot:item.2>
-          <v-card flat>
-            <v-card-text>
-              <p class="text-body-1 mb-4">{{ $t('Config.Step2.Description') }}</p>
-              <v-text-field
-                v-model="config.clientId"
-                :label="$t('Config.Step2.ClientId')"
-                variant="outlined"
-                class="mb-3"
-                hide-details
-              />
-              <v-text-field
-                v-model="config.clientSecret"
-                :label="$t('Config.Step2.ClientSecret')"
-                variant="outlined"
-                class="mb-3"
-                type="password"
-                hide-details
-              />
-              <v-text-field
-                v-model="config.redirectUri"
-                :label="$t('Config.Step2.RedirectUri')"
-                variant="outlined"
-                hide-details
-              />
-            </v-card-text>
-          </v-card>
-        </template>
+      <v-window v-model="activeTab">
+        <v-window-item value="setup">
+          <v-stepper v-model="currentStep" :items="stepItems" alt-labels>
+            <template v-slot:item.1>
+              <v-card flat>
+                <v-card-text>
+                  <p class="text-body-1 mb-4">{{ $t('Config.Step1.Description') }}</p>
+                  <v-alert type="info" variant="tonal" class="mb-4">
+                    <pre class="instructions">{{ $t('Config.Step1.Instructions') }}</pre>
+                    <v-chip color="primary" class="mt-2 mr-2" label>
+                      {{ redirectUri }}
+                    </v-chip>
+                    <v-chip
+                      color="secondary"
+                      class="mt-2"
+                      label
+                      append-icon="mdi-content-copy"
+                      @click="copyToClipboard(spotifyDashboardUrl)"
+                    >
+                      {{ spotifyDashboardUrl }}
+                    </v-chip>
+                  </v-alert>
 
-        <template v-slot:item.3>
+                  <v-btn
+                    color="#1DB954"
+                    variant="elevated"
+                    @click="openSpotifyDashboard"
+                    prepend-icon="mdi-open-in-new"
+                  >
+                    {{ $t('Config.Step1.Button') }}
+                  </v-btn>
+                </v-card-text>
+              </v-card>
+            </template>
+
+            <template v-slot:item.2>
+              <v-card flat>
+                <v-card-text>
+                  <p class="text-body-1 mb-4">{{ $t('Config.Step2.Description') }}</p>
+                  <v-text-field
+                    v-model="config.clientId"
+                    :label="$t('Config.Step2.ClientId')"
+                    variant="outlined"
+                    class="mb-3"
+                    hide-details
+                  />
+                  <v-text-field
+                    v-model="config.clientSecret"
+                    :label="$t('Config.Step2.ClientSecret')"
+                    variant="outlined"
+                    class="mb-3"
+                    type="password"
+                    hide-details
+                  />
+                  <v-text-field
+                    v-model="config.redirectUri"
+                    :label="$t('Config.Step2.RedirectUri')"
+                    variant="outlined"
+                    hide-details
+                  />
+                </v-card-text>
+              </v-card>
+            </template>
+
+            <template v-slot:item.3>
+              <v-card flat>
+                <v-card-text>
+                  <p class="text-body-1 mb-4">{{ $t('Config.Step3.Description') }}</p>
+
+                  <v-alert
+                    :type="isConnected ? 'success' : 'warning'"
+                    variant="tonal"
+                    class="mb-4"
+                  >
+                    <div class="d-flex align-center">
+                      <span>{{ isConnected ? $t('Config.Step3.Connected') : $t('Config.Step3.NotConnected') }}</span>
+                      <span v-if="isConnected && userName" class="ml-2">- {{ userName }}</span>
+                    </div>
+                  </v-alert>
+
+                  <v-btn
+                    v-if="!isConnected"
+                    color="#1DB954"
+                    variant="elevated"
+                    @click="connectSpotify"
+                    :loading="isConnecting"
+                    prepend-icon="mdi-spotify"
+                  >
+                    {{ $t('Config.Step3.Button') }}
+                  </v-btn>
+                </v-card-text>
+              </v-card>
+            </template>
+
+            <template v-slot:actions>
+              <v-stepper-actions
+                @click:prev="currentStep--"
+                @click:next="handleNext"
+                :prev-text="$t('Config.Back')"
+                :next-text="currentStep === 3 ? $t('Config.Save') : $t('Config.Next')"
+                :disabled="nextDisabled"
+              />
+            </template>
+          </v-stepper>
+        </v-window-item>
+
+        <v-window-item value="settings">
           <v-card flat>
             <v-card-text>
-              <p class="text-body-1 mb-4">{{ $t('Config.Step3.Description') }}</p>
-              
               <v-alert
-                :type="isConnected ? 'success' : 'warning'"
+                v-if="!isConnected"
+                type="warning"
                 variant="tonal"
                 class="mb-4"
+                density="compact"
               >
-                <div class="d-flex align-center">
-                  <span>{{ isConnected ? $t('Config.Step3.Connected') : $t('Config.Step3.NotConnected') }}</span>
-                  <span v-if="isConnected && userName" class="ml-2">- {{ userName }}</span>
-                </div>
+                {{ $t('Config.Settings.AuthBanner') }}
               </v-alert>
 
-              <div class="d-flex gap-3">
+              <v-alert
+                v-if="rateLimitedUntil"
+                type="warning"
+                variant="tonal"
+                class="mb-4"
+                density="compact"
+                icon="mdi-clock-alert-outline"
+              >
+                {{ rateLimitedMessage }}
+              </v-alert>
+
+              <div class="text-subtitle-1 mb-2">{{ $t('Config.Settings.PollInterval') }}</div>
+              <v-slider
+                v-model="settings.pollIntervalMs"
+                :min="1000"
+                :max="10000"
+                :step="500"
+                thumb-label
+                :ticks="{ 1000: '1s', 2000: '2s', 5000: '5s', 10000: '10s' }"
+                show-ticks="always"
+                tick-size="4"
+              >
+                <template v-slot:append>
+                  <span class="text-body-2 ml-2" style="min-width: 50px;">
+                    {{ (settings.pollIntervalMs / 1000).toFixed(1) }}s
+                  </span>
+                </template>
+              </v-slider>
+              <p class="text-caption text-medium-emphasis mb-4">{{ $t('Config.Settings.PollIntervalHint') }}</p>
+
+              <v-divider class="my-4" />
+
+              <div class="d-flex align-center mb-4">
+                <v-icon :color="isConnected ? 'success' : 'warning'" class="mr-2">
+                  {{ isConnected ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+                </v-icon>
+                <span class="text-body-1">
+                  {{ isConnected ? $t('Config.Step3.Connected') : $t('Config.Step3.NotConnected') }}
+                  <span v-if="isConnected && userName">- {{ userName }}</span>
+                </span>
+                <v-spacer />
                 <v-btn
-                  v-if="!isConnected"
-                  color="#1DB954"
-                  variant="elevated"
-                  @click="connectSpotify"
-                  :loading="isConnecting"
-                  prepend-icon="mdi-spotify"
-                >
-                  {{ $t('Config.Step3.Button') }}
-                </v-btn>
-                <v-btn
-                  v-else
+                  v-if="isConnected"
+                  size="small"
                   color="error"
                   variant="outlined"
                   @click="disconnectSpotify"
@@ -105,22 +183,67 @@
                   {{ $t('Config.Step3.Disconnect') }}
                 </v-btn>
               </div>
+
+              <v-btn
+                color="primary"
+                variant="elevated"
+                :disabled="!settingsDirty"
+                @click="saveSettings"
+                prepend-icon="mdi-content-save"
+              >
+                {{ $t('Config.Settings.Save') }}
+              </v-btn>
             </v-card-text>
           </v-card>
-        </template>
+        </v-window-item>
 
-        <template v-slot:actions>
-          <v-stepper-actions
-            @click:prev="currentStep--"
-            @click:next="handleNext"
-            :prev-text="$t('Config.Back')"
-            :next-text="currentStep === 3 ? $t('Config.Save') : $t('Config.Next')"
-            :disabled="nextDisabled"
-          />
-        </template>
-      </v-stepper>
+        <v-window-item value="logs">
+          <v-card flat>
+            <v-card-text>
+              <div class="d-flex align-center flex-wrap ga-2 mb-3">
+                <v-select
+                  v-model="logLevel"
+                  :items="logLevelItems"
+                  :label="$t('Config.Logs.Filter')"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                  style="max-width: 160px;"
+                />
+                <v-switch
+                  v-model="logAutoRefresh"
+                  :label="$t('Config.Logs.AutoRefresh')"
+                  color="primary"
+                  density="compact"
+                  hide-details
+                  inset
+                />
+                <v-spacer />
+                <v-btn size="small" variant="text" @click="fetchLogs" prepend-icon="mdi-refresh">
+                  {{ $t('Config.Logs.Refresh') }}
+                </v-btn>
+                <v-btn size="small" variant="text" @click="copyLogs" prepend-icon="mdi-content-copy">
+                  {{ $t('Config.Logs.Copy') }}
+                </v-btn>
+                <v-btn size="small" variant="text" color="warning" @click="clearLogs" prepend-icon="mdi-delete">
+                  {{ $t('Config.Logs.Clear') }}
+                </v-btn>
+                <v-btn size="small" variant="text" @click="openLogFolder" prepend-icon="mdi-folder-open">
+                  {{ $t('Config.Logs.OpenFolder') }}
+                </v-btn>
+              </div>
+
+              <v-card variant="outlined" class="log-box">
+                <pre v-if="logLines.length" ref="logPre" class="log-content">{{ logText }}</pre>
+                <div v-else class="pa-4 text-center text-medium-emphasis">
+                  {{ $t('Config.Logs.Empty') }}
+                </div>
+              </v-card>
+            </v-card-text>
+          </v-card>
+        </v-window-item>
+      </v-window>
     </v-card>
-
   </v-container>
 </template>
 
@@ -129,6 +252,7 @@ export default {
   name: 'ConfigPage',
   data() {
     return {
+      activeTab: 'setup',
       currentStep: 1,
       config: {
         clientId: '',
@@ -138,7 +262,17 @@ export default {
       isConnected: false,
       isConnecting: false,
       userName: '',
-      spotifyDashboardUrl: 'https://developer.spotify.com/dashboard'
+      spotifyDashboardUrl: 'https://developer.spotify.com/dashboard',
+      settings: {
+        pollIntervalMs: 2000,
+      },
+      settingsLoaded: { pollIntervalMs: 2000 },
+      rateLimitedUntil: 0,
+      statusPollTimer: null,
+      logLines: [],
+      logLevel: 'all',
+      logAutoRefresh: true,
+      logRefreshTimer: null,
     };
   },
   computed: {
@@ -157,7 +291,27 @@ export default {
         return !this.config.clientId || !this.config.clientSecret;
       }
       return false;
-    }
+    },
+    settingsDirty() {
+      return this.settings.pollIntervalMs !== this.settingsLoaded.pollIntervalMs;
+    },
+    rateLimitedMessage() {
+      if (!this.rateLimitedUntil) return '';
+      const t = new Date(this.rateLimitedUntil).toLocaleTimeString();
+      return this.$t('Config.Settings.RateLimited', { time: t });
+    },
+    logLevelItems() {
+      return [
+        { title: this.$t('Config.Logs.LevelAll'), value: 'all' },
+        { title: this.$t('Config.Logs.LevelInfo'), value: 'info' },
+        { title: this.$t('Config.Logs.LevelWarn'), value: 'warn' },
+        { title: this.$t('Config.Logs.LevelError'), value: 'error' },
+        { title: this.$t('Config.Logs.LevelDebug'), value: 'debug' },
+      ];
+    },
+    logText() {
+      return this.logLines.join('\n');
+    },
   },
   methods: {
     async openSpotifyDashboard() {
@@ -283,7 +437,7 @@ export default {
         const response = await this.$fd.sendToBackend({
           action: 'getConfig'
         });
-        
+
         if (response) {
           this.config.clientId = response.clientId || '';
           this.config.clientSecret = response.clientSecret || '';
@@ -294,12 +448,144 @@ export default {
       } catch (error) {
         this.$fd.error('Failed to load configuration: ' + error.message);
       }
-    }
+    },
+    async fetchStatus() {
+      try {
+        const status = await this.$fd.sendToBackend({ action: 'getStatus' });
+        if (status) {
+          this.rateLimitedUntil = status.rateLimitedUntil || 0;
+          if (status.pollIntervalMs && this.settings.pollIntervalMs === this.settingsLoaded.pollIntervalMs) {
+            this.settings.pollIntervalMs = status.pollIntervalMs;
+            this.settingsLoaded.pollIntervalMs = status.pollIntervalMs;
+          }
+          this.isConnected = !!status.authenticated;
+          if (status.userName) this.userName = status.userName;
+        }
+      } catch (err) {
+        // ignore — status is best-effort
+      }
+    },
+    startStatusPoll() {
+      this.stopStatusPoll();
+      this.fetchStatus();
+      this.statusPollTimer = setInterval(() => this.fetchStatus(), 5000);
+    },
+    stopStatusPoll() {
+      if (this.statusPollTimer) {
+        clearInterval(this.statusPollTimer);
+        this.statusPollTimer = null;
+      }
+    },
+    async fetchLogs() {
+      const pinnedToBottom = this.isLogPinnedToBottom();
+      try {
+        const res = await this.$fd.sendToBackend({
+          action: 'getLogs',
+          data: { lines: 200, level: this.logLevel === 'all' ? null : this.logLevel },
+        });
+        this.logLines = res?.logs || [];
+        if (pinnedToBottom) {
+          this.$nextTick(() => this.scrollLogsToBottom());
+        }
+      } catch (err) {
+        this.$fd.error('Failed to load logs: ' + err.message);
+      }
+    },
+    isLogPinnedToBottom() {
+      const pre = this.$refs.logPre;
+      if (!pre) return true;   // first render: scroll
+      // Within ~20px of bottom counts as "at bottom"
+      return pre.scrollHeight - pre.scrollTop - pre.clientHeight < 20;
+    },
+    scrollLogsToBottom() {
+      const pre = this.$refs.logPre;
+      if (pre) pre.scrollTop = pre.scrollHeight;
+    },
+    async copyLogs() {
+      try {
+        await navigator.clipboard.writeText(this.logLines.join('\n'));
+        this.$fd.info(this.$t('Config.Logs.Copied'));
+      } catch (err) {
+        this.$fd.error('Failed to copy: ' + err.message);
+      }
+    },
+    async clearLogs() {
+      try {
+        await this.$fd.sendToBackend({ action: 'clearLogs' });
+        this.logLines = [];
+        this.$fd.info(this.$t('Config.Logs.Cleared'));
+      } catch (err) {
+        this.$fd.error('Failed to clear logs: ' + err.message);
+      }
+    },
+    async openLogFolder() {
+      try {
+        await this.$fd.sendToBackend({ action: 'openLogFolder' });
+      } catch (err) {
+        this.$fd.error('Failed to open folder: ' + err.message);
+      }
+    },
+    startLogRefresh() {
+      this.stopLogRefresh();
+      this.fetchLogs();
+      if (this.logAutoRefresh) {
+        this.logRefreshTimer = setInterval(() => this.fetchLogs(), 3000);
+      }
+    },
+    stopLogRefresh() {
+      if (this.logRefreshTimer) {
+        clearInterval(this.logRefreshTimer);
+        this.logRefreshTimer = null;
+      }
+    },
+    async saveSettings() {
+      try {
+        const res = await this.$fd.sendToBackend({
+          action: 'saveSettings',
+          data: { pollIntervalMs: this.settings.pollIntervalMs },
+        });
+        if (res?.success) {
+          this.settingsLoaded.pollIntervalMs = res.pollIntervalMs;
+          this.settings.pollIntervalMs = res.pollIntervalMs;
+          this.$fd.info(this.$t('Config.Settings.Saved'));
+        }
+      } catch (err) {
+        this.$fd.error('Failed to save settings: ' + err.message);
+      }
+    },
+  },
+  watch: {
+    activeTab(newVal) {
+      if (newVal === 'settings') {
+        this.startStatusPoll();
+      } else {
+        this.stopStatusPoll();
+      }
+      if (newVal === 'logs') {
+        this.startLogRefresh();
+      } else {
+        this.stopLogRefresh();
+      }
+    },
+    logAutoRefresh(newVal) {
+      if (this.activeTab === 'logs') {
+        if (newVal) this.startLogRefresh();
+        else this.stopLogRefresh();
+      }
+    },
+    logLevel() {
+      if (this.activeTab === 'logs') this.fetchLogs();
+    },
   },
   mounted() {
     this.$fd.info('Spotify Config Page loaded');
     this.loadConfig();
-  }
+    this.fetchStatus();
+  },
+  beforeUnmount() {
+    this.stopStatusPoll();
+    this.stopLogRefresh();
+  },
 };
 </script>
 
@@ -319,8 +605,23 @@ export default {
   margin: 0;
 }
 
-.gap-3 {
-  gap: 12px;
+.log-box {
+  background-color: #1a1a1a;
+  max-height: 400px;
+  overflow: hidden;
+}
+
+.log-content {
+  margin: 0;
+  padding: 12px;
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #e0e0e0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 400px;
+  overflow-y: auto;
 }
 </style>
 

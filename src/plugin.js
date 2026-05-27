@@ -10,11 +10,16 @@ const { spawn } = require('child_process');
 
 const OAuthServer = require('./oauth-server');
 const SpotifyAPI = require('./spotify-api');
+const { RateLimitError } = require('./spotify-api');
 const CanvasRenderer = require('./canvas-renderer');
 
 // ============================================================================
 // Configuration Manager
 // ============================================================================
+
+const CONFIG_DEFAULTS = {
+    pollIntervalMs: 2000,
+};
 
 class ConfigManager {
     constructor() {
@@ -44,7 +49,9 @@ class ConfigManager {
     }
 
     get(key, defaultValue = null) {
-        return this.config[key] !== undefined ? this.config[key] : defaultValue;
+        if (this.config[key] !== undefined) return this.config[key];
+        if (CONFIG_DEFAULTS[key] !== undefined) return CONFIG_DEFAULTS[key];
+        return defaultValue;
     }
 
     set(key, value) {
@@ -83,6 +90,7 @@ let globalUpdateTimer = null;
 let lastPlaybackState = null;
 let currentTrackId = null;
 let isTrackLiked = false;
+let rateLimitWarningLoggedUntil = 0;
 
 // ============================================================================
 // System Utilities
@@ -124,6 +132,52 @@ function openUrlInBrowser(url) {
         logger.error(`[Plugin] Failed to open URL: ${err.message}`);
     });
 
+    child.unref();
+}
+
+// ============================================================================
+// Log Viewer Helpers
+// ============================================================================
+
+function getLogDir() {
+    return path.join(pluginPath, 'logs');
+}
+
+function getTodayLogPath() {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return path.join(getLogDir(), `${yyyy}-${mm}-${dd}.log`);
+}
+
+function readLogTail(maxLines, levelFilter) {
+    const file = getTodayLogPath();
+    if (!fs.existsSync(file)) return [];
+    const content = fs.readFileSync(file, 'utf8');
+    let lines = content.split('\n').filter(Boolean);
+    if (levelFilter) {
+        const needle = `[${levelFilter}]`;
+        lines = lines.filter(l => l.includes(needle));
+    } else {
+        // Default view: hide debug noise (poll-driven ui.message etc.)
+        lines = lines.filter(l => !l.includes('[debug]'));
+    }
+    return lines.slice(-maxLines);
+}
+
+function truncateTodayLog() {
+    const file = getTodayLogPath();
+    if (fs.existsSync(file)) fs.truncateSync(file, 0);
+}
+
+function openInFileManager(dir) {
+    const platform = process.platform;
+    const cmd = platform === 'darwin' ? 'open' : platform === 'win32' ? 'explorer' : 'xdg-open';
+    const child = spawn(cmd, [dir], { detached: true, stdio: 'ignore' });
+    child.on('error', (err) => {
+        logger.error(`[Plugin] Failed to open folder: ${err.message}`);
+    });
     child.unref();
 }
 
@@ -176,6 +230,11 @@ async function updatePlaybackState() {
                     logger.info(`[Plugin] Like status changed: ${isTrackLiked}`);
                 }
             } catch (err) {
+                if (err instanceof RateLimitError) {
+                    // Already logged once in the outer catch via getCurrentPlayback dedup;
+                    // skip silently to keep last known like state.
+                    return;
+                }
                 logger.error(`[Plugin] Failed to check if track is liked: ${err.message}`);
             }
         } else {
@@ -183,6 +242,16 @@ async function updatePlaybackState() {
             isTrackLiked = false;
         }
     } catch (err) {
+        if (err instanceof RateLimitError) {
+            // Log once per lock window, not every tick
+            if (rateLimitWarningLoggedUntil < err.rateLimitedUntil) {
+                const secs = Math.ceil(err.retryAfterMs / 1000);
+                logger.warn(`[Plugin] Spotify rate-limited, pausing playback polls for ${secs}s`);
+                rateLimitWarningLoggedUntil = err.rateLimitedUntil;
+            }
+            // Keep lastPlaybackState as-is so UI doesn't flicker
+            return;
+        }
         logger.error(`[Plugin] Failed to get playback state: ${err.message}`);
         lastPlaybackState = null;
     }
@@ -418,12 +487,13 @@ function unregisterDevice(serialNumber) {
 
 function startUpdateTimer() {
     if (globalUpdateTimer) return;
-    
+
+    const intervalMs = configManager.get('pollIntervalMs');
     globalUpdateTimer = setInterval(async () => {
         await updateAllDeviceKeys();
-    }, 1000);
-    
-    logger.info('[Plugin] Update timer started (1s interval)');
+    }, intervalMs);
+
+    logger.info(`[Plugin] Update timer started (${intervalMs}ms interval)`);
 }
 
 function stopUpdateTimer() {
@@ -442,6 +512,7 @@ function cleanupResources() {
     lastPlaybackState = null;
     currentTrackId = null;
     isTrackLiked = false;
+    rateLimitWarningLoggedUntil = 0;
     logger.info('[Plugin] Resources cleaned up');
 }
 
@@ -496,7 +567,7 @@ plugin.on('device.status', (devices) => {
  * Called when receiving message from UI
  */
 plugin.on('ui.message', async (payload) => {
-    logger.info(`[Plugin] ui.message - action: ${payload.action}`);
+    logger.debug(`[Plugin] ui.message - action: ${payload.action}`);
     
     switch (payload.action) {
         case 'getConfig':
@@ -572,6 +643,10 @@ plugin.on('ui.message', async (payload) => {
         case 'disconnect':
             spotifyApi.clearAuth();
             configManager.clearTokens();
+            lastPlaybackState = null;
+            currentTrackId = null;
+            isTrackLiked = false;
+            rateLimitWarningLoggedUntil = 0;
             return { success: true };
 
         case 'openUrl':
@@ -580,7 +655,40 @@ plugin.on('ui.message', async (payload) => {
                 return { success: true };
             }
             return { success: false, error: 'No URL provided' };
-            
+
+        case 'saveSettings': {
+            const raw = parseInt(payload.data?.pollIntervalMs, 10);
+            const pollIntervalMs = Math.max(1000, Math.min(10000, Number.isFinite(raw) ? raw : 2000));
+            configManager.set('pollIntervalMs', pollIntervalMs);
+            stopUpdateTimer();
+            startUpdateTimer();
+            return { success: true, pollIntervalMs };
+        }
+
+        case 'getStatus': {
+            const apiStatus = spotifyApi.getStatus();
+            return {
+                ...apiStatus,
+                pollIntervalMs: configManager.get('pollIntervalMs'),
+                userName: configManager.get('userName', ''),
+            };
+        }
+
+        case 'getLogs': {
+            const lines = Math.max(1, Math.min(2000, parseInt(payload.data?.lines, 10) || 200));
+            const allowedLevels = ['debug', 'info', 'warn', 'error'];
+            const level = allowedLevels.includes(payload.data?.level) ? payload.data.level : null;
+            return { logs: readLogTail(lines, level) };
+        }
+        case 'clearLogs': {
+            truncateTodayLog();
+            return { success: true };
+        }
+        case 'openLogFolder': {
+            openInFileManager(getLogDir());
+            return { success: true };
+        }
+
         default:
             logger.warn(`[Plugin] Unknown UI action: ${payload.action}`);
             return { success: false, error: 'Unknown action' };
