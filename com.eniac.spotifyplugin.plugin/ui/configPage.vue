@@ -473,16 +473,25 @@ export default {
       }
     },
     async fetchLogs() {
+      const pinnedToBottom = this.isLogPinnedToBottom();
       try {
         const res = await this.$fd.sendToBackend({
           action: 'getLogs',
           data: { lines: 200, level: this.logLevel === 'all' ? null : this.logLevel },
         });
         this.logLines = res?.logs || [];
-        this.$nextTick(() => this.scrollLogsToBottom());
+        if (pinnedToBottom) {
+          this.$nextTick(() => this.scrollLogsToBottom());
+        }
       } catch (err) {
         this.$fd.error('Failed to load logs: ' + err.message);
       }
+    },
+    isLogPinnedToBottom() {
+      const pre = this.$refs.logPre;
+      if (!pre) return true;   // first render: scroll
+      // Within ~20px of bottom counts as "at bottom"
+      return pre.scrollHeight - pre.scrollTop - pre.clientHeight < 20;
     },
     scrollLogsToBottom() {
       const pre = this.$refs.logPre;

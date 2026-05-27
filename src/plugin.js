@@ -227,6 +227,11 @@ async function updatePlaybackState() {
                     logger.info(`[Plugin] Like status changed: ${isTrackLiked}`);
                 }
             } catch (err) {
+                if (err instanceof RateLimitError) {
+                    // Already logged once in the outer catch via getCurrentPlayback dedup;
+                    // skip silently to keep last known like state.
+                    return;
+                }
                 logger.error(`[Plugin] Failed to check if track is liked: ${err.message}`);
             }
         } else {
@@ -635,6 +640,10 @@ plugin.on('ui.message', async (payload) => {
         case 'disconnect':
             spotifyApi.clearAuth();
             configManager.clearTokens();
+            lastPlaybackState = null;
+            currentTrackId = null;
+            isTrackLiked = false;
+            rateLimitWarningLoggedUntil = 0;
             return { success: true };
 
         case 'openUrl':
