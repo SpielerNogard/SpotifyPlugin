@@ -165,7 +165,7 @@ function readLogTail(maxLines, levelFilter) {
 
 function truncateTodayLog() {
     const file = getTodayLogPath();
-    if (fs.existsSync(file)) fs.writeFileSync(file, '');
+    if (fs.existsSync(file)) fs.truncateSync(file, 0);
 }
 
 function openInFileManager(dir) {
@@ -663,7 +663,7 @@ plugin.on('ui.message', async (payload) => {
         }
 
         case 'getLogs': {
-            const lines = Math.min(2000, parseInt(payload.data?.lines, 10) || 200);
+            const lines = Math.max(1, Math.min(2000, parseInt(payload.data?.lines, 10) || 200));
             const allowedLevels = ['info', 'warn', 'error'];
             const level = allowedLevels.includes(payload.data?.level) ? payload.data.level : null;
             return { logs: readLogTail(lines, level) };

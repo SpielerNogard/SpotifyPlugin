@@ -200,7 +200,7 @@
         <v-window-item value="logs">
           <v-card flat>
             <v-card-text>
-              <div class="d-flex align-center flex-wrap gap-2 mb-3">
+              <div class="d-flex align-center flex-wrap ga-2 mb-3">
                 <v-select
                   v-model="logLevel"
                   :items="logLevelItems"
@@ -543,7 +543,7 @@ export default {
   },
   watch: {
     activeTab(newVal) {
-      if (newVal === 'settings' || newVal === 'logs') {
+      if (newVal === 'settings') {
         this.startStatusPoll();
       } else {
         this.stopStatusPoll();
@@ -609,10 +609,6 @@ export default {
   word-break: break-all;
   max-height: 400px;
   overflow-y: auto;
-}
-
-.gap-2 {
-  gap: 8px;
 }
 </style>
 
