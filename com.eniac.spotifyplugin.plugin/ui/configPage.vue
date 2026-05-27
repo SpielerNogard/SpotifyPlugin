@@ -335,9 +335,5 @@ export default {
   font-family: inherit;
   margin: 0;
 }
-
-.gap-3 {
-  gap: 12px;
-}
 </style>
 
