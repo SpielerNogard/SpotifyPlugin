@@ -221,32 +221,10 @@ class SpotifyAPI {
     }
 
     /**
-     * Get current playback state
+     * Get current playback state. Returns null when no active playback (204).
      */
     async getCurrentPlayback() {
-        try {
-            const response = await axios.get(`${SPOTIFY_API_BASE}/me/player`, {
-                headers: {
-                    'Authorization': `Bearer ${this.accessToken}`
-                }
-            });
-            
-            // 204 means no active playback
-            if (response.status === 204 || !response.data) {
-                return null;
-            }
-            
-            return response.data;
-        } catch (err) {
-            if (err.response?.status === 401) {
-                await this.refreshAccessToken();
-                return this.getCurrentPlayback();
-            }
-            if (err.response?.status === 204) {
-                return null;
-            }
-            throw err;
-        }
+        return this.request('GET', '/me/player', null, { allow204: true });
     }
 
     /**
