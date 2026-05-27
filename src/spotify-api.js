@@ -8,6 +8,15 @@ const querystring = require('querystring');
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
 
+class RateLimitError extends Error {
+    constructor(until) {
+        super(`Rate limited until ${new Date(until).toISOString()}`);
+        this.name = 'RateLimitError';
+        this.rateLimitedUntil = until;
+        this.retryAfterMs = Math.max(0, until - Date.now());
+    }
+}
+
 class SpotifyAPI {
     constructor(logger, configManager) {
         this.logger = logger;
@@ -17,6 +26,8 @@ class SpotifyAPI {
         this.tokenExpiresAt = null;
         this.clientId = null;
         this.clientSecret = null;
+        this.rateLimitedUntil = 0;
+        this.consecutive429 = 0;
     }
 
     /**
@@ -51,11 +62,29 @@ class SpotifyAPI {
     }
 
     /**
+     * Snapshot for UI status display.
+     */
+    getStatus() {
+        return {
+            authenticated: this.isAuthenticated(),
+            rateLimitedUntil: this.rateLimitedUntil > Date.now() ? this.rateLimitedUntil : 0,
+        };
+    }
+
+    /**
      * Check if token needs refresh (5 min buffer)
      */
     needsRefresh() {
         if (!this.tokenExpiresAt) return true;
         return Date.now() >= this.tokenExpiresAt.getTime() - 5 * 60 * 1000;
+    }
+
+    /**
+     * Exponential backoff used when 429 response lacks Retry-After header.
+     * Returns seconds, capped at 60s.
+     */
+    _fallbackBackoff() {
+        return Math.min(60, Math.pow(2, this.consecutive429 + 1));
     }
 
     /**
@@ -343,4 +372,6 @@ class SpotifyAPI {
 }
 
 module.exports = SpotifyAPI;
+module.exports.SpotifyAPI = SpotifyAPI;
+module.exports.RateLimitError = RateLimitError;
 
