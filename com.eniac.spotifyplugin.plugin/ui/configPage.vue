@@ -306,6 +306,7 @@ export default {
         { title: this.$t('Config.Logs.LevelInfo'), value: 'info' },
         { title: this.$t('Config.Logs.LevelWarn'), value: 'warn' },
         { title: this.$t('Config.Logs.LevelError'), value: 'error' },
+        { title: this.$t('Config.Logs.LevelDebug'), value: 'debug' },
       ];
     },
     logText() {

@@ -159,6 +159,9 @@ function readLogTail(maxLines, levelFilter) {
     if (levelFilter) {
         const needle = `[${levelFilter}]`;
         lines = lines.filter(l => l.includes(needle));
+    } else {
+        // Default view: hide debug noise (poll-driven ui.message etc.)
+        lines = lines.filter(l => !l.includes('[debug]'));
     }
     return lines.slice(-maxLines);
 }
@@ -564,7 +567,7 @@ plugin.on('device.status', (devices) => {
  * Called when receiving message from UI
  */
 plugin.on('ui.message', async (payload) => {
-    logger.info(`[Plugin] ui.message - action: ${payload.action}`);
+    logger.debug(`[Plugin] ui.message - action: ${payload.action}`);
     
     switch (payload.action) {
         case 'getConfig':
@@ -673,7 +676,7 @@ plugin.on('ui.message', async (payload) => {
 
         case 'getLogs': {
             const lines = Math.max(1, Math.min(2000, parseInt(payload.data?.lines, 10) || 200));
-            const allowedLevels = ['info', 'warn', 'error'];
+            const allowedLevels = ['debug', 'info', 'warn', 'error'];
             const level = allowedLevels.includes(payload.data?.level) ? payload.data.level : null;
             return { logs: readLogTail(lines, level) };
         }
