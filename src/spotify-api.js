@@ -202,15 +202,12 @@ class SpotifyAPI {
             }
             if (err.response?.status === 429) {
                 const headerVal = err.response.headers?.['retry-after'];
-                const retryAfterSec = parseInt(headerVal, 10) || this._fallbackBackoff();
+                const parsed = parseInt(headerVal, 10);
+                const retryAfterSec = Number.isFinite(parsed) && parsed >= 0 ? parsed : this._fallbackBackoff();
                 this.rateLimitedUntil = Date.now() + retryAfterSec * 1000;
                 this.consecutive429 += 1;
                 this.logger.warn(`[SpotifyAPI] 429 from ${endpoint}, backing off ${retryAfterSec}s`);
                 throw new RateLimitError(this.rateLimitedUntil);
-            }
-            if (opts.allow204 && err.response?.status === 204) {
-                this.consecutive429 = 0;
-                return null;
             }
             throw err;
         }
