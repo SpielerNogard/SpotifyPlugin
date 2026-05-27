@@ -10,6 +10,7 @@ const { spawn } = require('child_process');
 
 const OAuthServer = require('./oauth-server');
 const SpotifyAPI = require('./spotify-api');
+const { RateLimitError } = require('./spotify-api');
 const CanvasRenderer = require('./canvas-renderer');
 
 // ============================================================================
@@ -83,6 +84,7 @@ let globalUpdateTimer = null;
 let lastPlaybackState = null;
 let currentTrackId = null;
 let isTrackLiked = false;
+let rateLimitWarningLoggedUntil = 0;
 
 // ============================================================================
 // System Utilities
@@ -183,6 +185,16 @@ async function updatePlaybackState() {
             isTrackLiked = false;
         }
     } catch (err) {
+        if (err instanceof RateLimitError) {
+            // Log once per lock window, not every tick
+            if (rateLimitWarningLoggedUntil < err.rateLimitedUntil) {
+                const secs = Math.ceil(err.retryAfterMs / 1000);
+                logger.warn(`[Plugin] Spotify rate-limited, pausing playback polls for ${secs}s`);
+                rateLimitWarningLoggedUntil = err.rateLimitedUntil;
+            }
+            // Keep lastPlaybackState as-is so UI doesn't flicker
+            return;
+        }
         logger.error(`[Plugin] Failed to get playback state: ${err.message}`);
         lastPlaybackState = null;
     }
@@ -442,6 +454,7 @@ function cleanupResources() {
     lastPlaybackState = null;
     currentTrackId = null;
     isTrackLiked = false;
+    rateLimitWarningLoggedUntil = 0;
     logger.info('[Plugin] Resources cleaned up');
 }
 
