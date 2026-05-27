@@ -121,8 +121,78 @@
         <v-window-item value="settings">
           <v-card flat>
             <v-card-text>
-              <!-- Settings content added in Task 8 -->
-              <p class="text-body-2 text-medium-emphasis">Settings (Task 8)</p>
+              <v-alert
+                v-if="!isConnected"
+                type="warning"
+                variant="tonal"
+                class="mb-4"
+                density="compact"
+              >
+                {{ $t('Config.Settings.AuthBanner') }}
+              </v-alert>
+
+              <v-alert
+                v-if="rateLimitedUntil"
+                type="warning"
+                variant="tonal"
+                class="mb-4"
+                density="compact"
+                icon="mdi-clock-alert-outline"
+              >
+                {{ rateLimitedMessage }}
+              </v-alert>
+
+              <div class="text-subtitle-1 mb-2">{{ $t('Config.Settings.PollInterval') }}</div>
+              <v-slider
+                v-model="settings.pollIntervalMs"
+                :min="1000"
+                :max="10000"
+                :step="500"
+                thumb-label
+                :ticks="{ 1000: '1s', 2000: '2s', 5000: '5s', 10000: '10s' }"
+                show-ticks="always"
+                tick-size="4"
+              >
+                <template v-slot:append>
+                  <span class="text-body-2 ml-2" style="min-width: 50px;">
+                    {{ (settings.pollIntervalMs / 1000).toFixed(1) }}s
+                  </span>
+                </template>
+              </v-slider>
+              <p class="text-caption text-medium-emphasis mb-4">{{ $t('Config.Settings.PollIntervalHint') }}</p>
+
+              <v-divider class="my-4" />
+
+              <div class="d-flex align-center mb-4">
+                <v-icon :color="isConnected ? 'success' : 'warning'" class="mr-2">
+                  {{ isConnected ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+                </v-icon>
+                <span class="text-body-1">
+                  {{ isConnected ? $t('Config.Step3.Connected') : $t('Config.Step3.NotConnected') }}
+                  <span v-if="isConnected && userName">- {{ userName }}</span>
+                </span>
+                <v-spacer />
+                <v-btn
+                  v-if="isConnected"
+                  size="small"
+                  color="error"
+                  variant="outlined"
+                  @click="disconnectSpotify"
+                  prepend-icon="mdi-logout"
+                >
+                  {{ $t('Config.Step3.Disconnect') }}
+                </v-btn>
+              </div>
+
+              <v-btn
+                color="primary"
+                variant="elevated"
+                :disabled="!settingsDirty"
+                @click="saveSettings"
+                prepend-icon="mdi-content-save"
+              >
+                {{ $t('Config.Settings.Save') }}
+              </v-btn>
             </v-card-text>
           </v-card>
         </v-window-item>
@@ -155,7 +225,13 @@ export default {
       isConnected: false,
       isConnecting: false,
       userName: '',
-      spotifyDashboardUrl: 'https://developer.spotify.com/dashboard'
+      spotifyDashboardUrl: 'https://developer.spotify.com/dashboard',
+      settings: {
+        pollIntervalMs: 2000,
+      },
+      settingsLoaded: { pollIntervalMs: 2000 },
+      rateLimitedUntil: 0,
+      statusPollTimer: null
     };
   },
   computed: {
@@ -174,7 +250,15 @@ export default {
         return !this.config.clientId || !this.config.clientSecret;
       }
       return false;
-    }
+    },
+    settingsDirty() {
+      return this.settings.pollIntervalMs !== this.settingsLoaded.pollIntervalMs;
+    },
+    rateLimitedMessage() {
+      if (!this.rateLimitedUntil) return '';
+      const t = new Date(this.rateLimitedUntil).toLocaleTimeString();
+      return this.$t('Config.Settings.RateLimited', { time: t });
+    },
   },
   methods: {
     async openSpotifyDashboard() {
@@ -300,7 +384,7 @@ export default {
         const response = await this.$fd.sendToBackend({
           action: 'getConfig'
         });
-        
+
         if (response) {
           this.config.clientId = response.clientId || '';
           this.config.clientSecret = response.clientSecret || '';
@@ -311,12 +395,67 @@ export default {
       } catch (error) {
         this.$fd.error('Failed to load configuration: ' + error.message);
       }
-    }
+    },
+    async fetchStatus() {
+      try {
+        const status = await this.$fd.sendToBackend({ action: 'getStatus' });
+        if (status) {
+          this.rateLimitedUntil = status.rateLimitedUntil || 0;
+          if (status.pollIntervalMs && this.settings.pollIntervalMs === this.settingsLoaded.pollIntervalMs) {
+            this.settings.pollIntervalMs = status.pollIntervalMs;
+            this.settingsLoaded.pollIntervalMs = status.pollIntervalMs;
+          }
+          this.isConnected = !!status.authenticated;
+          if (status.userName) this.userName = status.userName;
+        }
+      } catch (err) {
+        // ignore — status is best-effort
+      }
+    },
+    startStatusPoll() {
+      this.stopStatusPoll();
+      this.fetchStatus();
+      this.statusPollTimer = setInterval(() => this.fetchStatus(), 5000);
+    },
+    stopStatusPoll() {
+      if (this.statusPollTimer) {
+        clearInterval(this.statusPollTimer);
+        this.statusPollTimer = null;
+      }
+    },
+    async saveSettings() {
+      try {
+        const res = await this.$fd.sendToBackend({
+          action: 'saveSettings',
+          data: { pollIntervalMs: this.settings.pollIntervalMs },
+        });
+        if (res?.success) {
+          this.settingsLoaded.pollIntervalMs = res.pollIntervalMs;
+          this.settings.pollIntervalMs = res.pollIntervalMs;
+          this.$fd.info(this.$t('Config.Settings.Saved'));
+        }
+      } catch (err) {
+        this.$fd.error('Failed to save settings: ' + err.message);
+      }
+    },
+  },
+  watch: {
+    activeTab(newVal) {
+      if (newVal === 'settings' || newVal === 'logs') {
+        this.startStatusPoll();
+      } else {
+        this.stopStatusPoll();
+      }
+    },
   },
   mounted() {
     this.$fd.info('Spotify Config Page loaded');
     this.loadConfig();
-  }
+    this.fetchStatus();
+  },
+  beforeUnmount() {
+    this.stopStatusPoll();
+  },
 };
 </script>
 

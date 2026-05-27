@@ -600,7 +600,25 @@ plugin.on('ui.message', async (payload) => {
                 return { success: true };
             }
             return { success: false, error: 'No URL provided' };
-            
+
+        case 'saveSettings': {
+            const raw = parseInt(payload.data?.pollIntervalMs, 10);
+            const pollIntervalMs = Math.max(1000, Math.min(10000, Number.isFinite(raw) ? raw : 2000));
+            configManager.set('pollIntervalMs', pollIntervalMs);
+            stopUpdateTimer();
+            startUpdateTimer();
+            return { success: true, pollIntervalMs };
+        }
+
+        case 'getStatus': {
+            const apiStatus = spotifyApi.getStatus();
+            return {
+                ...apiStatus,
+                pollIntervalMs: configManager.get('pollIntervalMs'),
+                userName: configManager.get('userName', ''),
+            };
+        }
+
         default:
             logger.warn(`[Plugin] Unknown UI action: ${payload.action}`);
             return { success: false, error: 'Unknown action' };
