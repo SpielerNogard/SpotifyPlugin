@@ -17,6 +17,10 @@ const CanvasRenderer = require('./canvas-renderer');
 // Configuration Manager
 // ============================================================================
 
+const CONFIG_DEFAULTS = {
+    pollIntervalMs: 2000,
+};
+
 class ConfigManager {
     constructor() {
         this.configPath = path.join(pluginPath, 'config.json');
@@ -45,7 +49,9 @@ class ConfigManager {
     }
 
     get(key, defaultValue = null) {
-        return this.config[key] !== undefined ? this.config[key] : defaultValue;
+        if (this.config[key] !== undefined) return this.config[key];
+        if (CONFIG_DEFAULTS[key] !== undefined) return CONFIG_DEFAULTS[key];
+        return defaultValue;
     }
 
     set(key, value) {
@@ -430,12 +436,13 @@ function unregisterDevice(serialNumber) {
 
 function startUpdateTimer() {
     if (globalUpdateTimer) return;
-    
+
+    const intervalMs = configManager.get('pollIntervalMs');
     globalUpdateTimer = setInterval(async () => {
         await updateAllDeviceKeys();
-    }, 1000);
-    
-    logger.info('[Plugin] Update timer started (1s interval)');
+    }, intervalMs);
+
+    logger.info(`[Plugin] Update timer started (${intervalMs}ms interval)`);
 }
 
 function stopUpdateTimer() {
