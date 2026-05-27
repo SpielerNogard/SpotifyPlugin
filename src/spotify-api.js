@@ -139,9 +139,19 @@ class SpotifyAPI {
     }
 
     /**
-     * Make an authenticated API request
+     * Make an authenticated API request.
+     * @param {string} method
+     * @param {string} endpoint
+     * @param {*} data
+     * @param {object} opts
+     * @param {boolean} opts.allow204 - if true, returns null on HTTP 204 instead of throwing
      */
-    async request(method, endpoint, data = null) {
+    async request(method, endpoint, data = null, opts = {}) {
+        // Pre-check: short-circuit during active rate-limit window
+        if (this.rateLimitedUntil > Date.now()) {
+            throw new RateLimitError(this.rateLimitedUntil);
+        }
+
         // Refresh token if needed
         if (this.needsRefresh()) {
             try {
@@ -172,19 +182,35 @@ class SpotifyAPI {
             }
 
             const response = await axios(config);
+
+            if (opts.allow204 && response.status === 204) {
+                this.consecutive429 = 0;
+                return null;
+            }
+
+            this.consecutive429 = 0;
             return response.data;
         } catch (err) {
             if (err.response?.status === 401) {
-                // Token expired, try refresh
                 this.logger.warn('[SpotifyAPI] Got 401, attempting token refresh');
                 await this.refreshAccessToken();
-                // Retry request
-                return this.request(method, endpoint, data);
+                return this.request(method, endpoint, data, opts);
             }
             if (err.response?.status === 403) {
-                // Permission denied - likely Premium required or need to reauthorize
                 this.logger.error('[SpotifyAPI] 403 Forbidden - This feature may require Spotify Premium or reauthorization');
                 throw new Error('Spotify Premium required or please reconnect your account');
+            }
+            if (err.response?.status === 429) {
+                const headerVal = err.response.headers?.['retry-after'];
+                const retryAfterSec = parseInt(headerVal, 10) || this._fallbackBackoff();
+                this.rateLimitedUntil = Date.now() + retryAfterSec * 1000;
+                this.consecutive429 += 1;
+                this.logger.warn(`[SpotifyAPI] 429 from ${endpoint}, backing off ${retryAfterSec}s`);
+                throw new RateLimitError(this.rateLimitedUntil);
+            }
+            if (opts.allow204 && err.response?.status === 204) {
+                this.consecutive429 = 0;
+                return null;
             }
             throw err;
         }
@@ -367,6 +393,7 @@ class SpotifyAPI {
         this.accessToken = null;
         this.refreshToken = null;
         this.tokenExpiresAt = null;
+        this.consecutive429 = 0;
         this.logger.info('[SpotifyAPI] Authentication cleared');
     }
 }
