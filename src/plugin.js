@@ -136,6 +136,49 @@ function openUrlInBrowser(url) {
 }
 
 // ============================================================================
+// Log Viewer Helpers
+// ============================================================================
+
+function getLogDir() {
+    return path.join(pluginPath, 'logs');
+}
+
+function getTodayLogPath() {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return path.join(getLogDir(), `${yyyy}-${mm}-${dd}.log`);
+}
+
+function readLogTail(maxLines, levelFilter) {
+    const file = getTodayLogPath();
+    if (!fs.existsSync(file)) return [];
+    const content = fs.readFileSync(file, 'utf8');
+    let lines = content.split('\n').filter(Boolean);
+    if (levelFilter) {
+        const needle = `[${levelFilter}]`;
+        lines = lines.filter(l => l.includes(needle));
+    }
+    return lines.slice(-maxLines);
+}
+
+function truncateTodayLog() {
+    const file = getTodayLogPath();
+    if (fs.existsSync(file)) fs.writeFileSync(file, '');
+}
+
+function openInFileManager(dir) {
+    const platform = process.platform;
+    const cmd = platform === 'darwin' ? 'open' : platform === 'win32' ? 'explorer' : 'xdg-open';
+    const child = spawn(cmd, [dir], { detached: true, stdio: 'ignore' });
+    child.on('error', (err) => {
+        logger.error(`[Plugin] Failed to open folder: ${err.message}`);
+    });
+    child.unref();
+}
+
+// ============================================================================
 // Initialization
 // ============================================================================
 
@@ -617,6 +660,21 @@ plugin.on('ui.message', async (payload) => {
                 pollIntervalMs: configManager.get('pollIntervalMs'),
                 userName: configManager.get('userName', ''),
             };
+        }
+
+        case 'getLogs': {
+            const lines = Math.min(2000, parseInt(payload.data?.lines, 10) || 200);
+            const allowedLevels = ['info', 'warn', 'error'];
+            const level = allowedLevels.includes(payload.data?.level) ? payload.data.level : null;
+            return { logs: readLogTail(lines, level) };
+        }
+        case 'clearLogs': {
+            truncateTodayLog();
+            return { success: true };
+        }
+        case 'openLogFolder': {
+            openInFileManager(getLogDir());
+            return { success: true };
         }
 
         default:

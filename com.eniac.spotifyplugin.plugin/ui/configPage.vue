@@ -200,8 +200,45 @@
         <v-window-item value="logs">
           <v-card flat>
             <v-card-text>
-              <!-- Logs content added in Task 9 -->
-              <p class="text-body-2 text-medium-emphasis">Logs (Task 9)</p>
+              <div class="d-flex align-center flex-wrap gap-2 mb-3">
+                <v-select
+                  v-model="logLevel"
+                  :items="logLevelItems"
+                  :label="$t('Config.Logs.Filter')"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                  style="max-width: 160px;"
+                />
+                <v-switch
+                  v-model="logAutoRefresh"
+                  :label="$t('Config.Logs.AutoRefresh')"
+                  color="primary"
+                  density="compact"
+                  hide-details
+                  inset
+                />
+                <v-spacer />
+                <v-btn size="small" variant="text" @click="fetchLogs" prepend-icon="mdi-refresh">
+                  {{ $t('Config.Logs.Refresh') }}
+                </v-btn>
+                <v-btn size="small" variant="text" @click="copyLogs" prepend-icon="mdi-content-copy">
+                  {{ $t('Config.Logs.Copy') }}
+                </v-btn>
+                <v-btn size="small" variant="text" color="warning" @click="clearLogs" prepend-icon="mdi-delete">
+                  {{ $t('Config.Logs.Clear') }}
+                </v-btn>
+                <v-btn size="small" variant="text" @click="openLogFolder" prepend-icon="mdi-folder-open">
+                  {{ $t('Config.Logs.OpenFolder') }}
+                </v-btn>
+              </div>
+
+              <v-card variant="outlined" class="log-box">
+                <pre v-if="logLines.length" ref="logPre" class="log-content">{{ logLines.join('\n') }}</pre>
+                <div v-else class="pa-4 text-center text-medium-emphasis">
+                  {{ $t('Config.Logs.Empty') }}
+                </div>
+              </v-card>
             </v-card-text>
           </v-card>
         </v-window-item>
@@ -231,7 +268,11 @@ export default {
       },
       settingsLoaded: { pollIntervalMs: 2000 },
       rateLimitedUntil: 0,
-      statusPollTimer: null
+      statusPollTimer: null,
+      logLines: [],
+      logLevel: 'all',
+      logAutoRefresh: true,
+      logRefreshTimer: null,
     };
   },
   computed: {
@@ -258,6 +299,14 @@ export default {
       if (!this.rateLimitedUntil) return '';
       const t = new Date(this.rateLimitedUntil).toLocaleTimeString();
       return this.$t('Config.Settings.RateLimited', { time: t });
+    },
+    logLevelItems() {
+      return [
+        { title: this.$t('Config.Logs.LevelAll'), value: 'all' },
+        { title: this.$t('Config.Logs.LevelInfo'), value: 'info' },
+        { title: this.$t('Config.Logs.LevelWarn'), value: 'warn' },
+        { title: this.$t('Config.Logs.LevelError'), value: 'error' },
+      ];
     },
   },
   methods: {
@@ -423,6 +472,59 @@ export default {
         this.statusPollTimer = null;
       }
     },
+    async fetchLogs() {
+      try {
+        const res = await this.$fd.sendToBackend({
+          action: 'getLogs',
+          data: { lines: 200, level: this.logLevel === 'all' ? null : this.logLevel },
+        });
+        this.logLines = res?.logs || [];
+        this.$nextTick(() => this.scrollLogsToBottom());
+      } catch (err) {
+        this.$fd.error('Failed to load logs: ' + err.message);
+      }
+    },
+    scrollLogsToBottom() {
+      const pre = this.$refs.logPre;
+      if (pre) pre.scrollTop = pre.scrollHeight;
+    },
+    async copyLogs() {
+      try {
+        await navigator.clipboard.writeText(this.logLines.join('\n'));
+        this.$fd.info(this.$t('Config.Logs.Copied'));
+      } catch (err) {
+        this.$fd.error('Failed to copy: ' + err.message);
+      }
+    },
+    async clearLogs() {
+      try {
+        await this.$fd.sendToBackend({ action: 'clearLogs' });
+        this.logLines = [];
+        this.$fd.info(this.$t('Config.Logs.Cleared'));
+      } catch (err) {
+        this.$fd.error('Failed to clear logs: ' + err.message);
+      }
+    },
+    async openLogFolder() {
+      try {
+        await this.$fd.sendToBackend({ action: 'openLogFolder' });
+      } catch (err) {
+        this.$fd.error('Failed to open folder: ' + err.message);
+      }
+    },
+    startLogRefresh() {
+      this.stopLogRefresh();
+      this.fetchLogs();
+      if (this.logAutoRefresh) {
+        this.logRefreshTimer = setInterval(() => this.fetchLogs(), 3000);
+      }
+    },
+    stopLogRefresh() {
+      if (this.logRefreshTimer) {
+        clearInterval(this.logRefreshTimer);
+        this.logRefreshTimer = null;
+      }
+    },
     async saveSettings() {
       try {
         const res = await this.$fd.sendToBackend({
@@ -446,6 +548,20 @@ export default {
       } else {
         this.stopStatusPoll();
       }
+      if (newVal === 'logs') {
+        this.startLogRefresh();
+      } else {
+        this.stopLogRefresh();
+      }
+    },
+    logAutoRefresh(newVal) {
+      if (this.activeTab === 'logs') {
+        if (newVal) this.startLogRefresh();
+        else this.stopLogRefresh();
+      }
+    },
+    logLevel() {
+      if (this.activeTab === 'logs') this.fetchLogs();
     },
   },
   mounted() {
@@ -455,6 +571,7 @@ export default {
   },
   beforeUnmount() {
     this.stopStatusPoll();
+    this.stopLogRefresh();
   },
 };
 </script>
@@ -473,6 +590,29 @@ export default {
   white-space: pre-wrap;
   font-family: inherit;
   margin: 0;
+}
+
+.log-box {
+  background-color: #1a1a1a;
+  max-height: 400px;
+  overflow: hidden;
+}
+
+.log-content {
+  margin: 0;
+  padding: 12px;
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #e0e0e0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.gap-2 {
+  gap: 8px;
 }
 </style>
 
