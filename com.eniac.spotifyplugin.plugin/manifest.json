@@ -252,7 +252,37 @@
                 },
                 "Next": "Next",
                 "Back": "Back",
-                "Save": "Save"
+                "Save": "Save",
+                "Tabs": {
+                    "Setup": "Setup",
+                    "Settings": "Settings",
+                    "Logs": "Logs"
+                },
+                "Settings": {
+                    "PollInterval": "Polling interval",
+                    "PollIntervalHint": "How often to ask Spotify for the current track. Lower = more responsive but risks rate-limiting.",
+                    "Seconds": "{n}s",
+                    "Save": "Save settings",
+                    "Saved": "Settings saved",
+                    "RateLimited": "Currently rate-limited by Spotify until {time}",
+                    "AuthBanner": "Connect Spotify on the Setup tab to enable playback control."
+                },
+                "Logs": {
+                    "Title": "Plugin logs",
+                    "Filter": "Filter",
+                    "LevelAll": "All",
+                    "LevelInfo": "Info",
+                    "LevelWarn": "Warning",
+                    "LevelError": "Error",
+                    "AutoRefresh": "Auto-refresh",
+                    "Refresh": "Refresh",
+                    "Copy": "Copy",
+                    "Copied": "Copied to clipboard",
+                    "Clear": "Clear",
+                    "Cleared": "Logs cleared",
+                    "OpenFolder": "Open log folder",
+                    "Empty": "No log entries yet."
+                }
             }
         },
         "zh-CN": {
@@ -318,7 +348,37 @@
                 },
                 "Next": "下一步",
                 "Back": "上一步",
-                "Save": "保存"
+                "Save": "保存",
+                "Tabs": {
+                    "Setup": "Setup",
+                    "Settings": "Settings",
+                    "Logs": "Logs"
+                },
+                "Settings": {
+                    "PollInterval": "Polling interval",
+                    "PollIntervalHint": "How often to ask Spotify for the current track. Lower = more responsive but risks rate-limiting.",
+                    "Seconds": "{n}s",
+                    "Save": "Save settings",
+                    "Saved": "Settings saved",
+                    "RateLimited": "Currently rate-limited by Spotify until {time}",
+                    "AuthBanner": "Connect Spotify on the Setup tab to enable playback control."
+                },
+                "Logs": {
+                    "Title": "Plugin logs",
+                    "Filter": "Filter",
+                    "LevelAll": "All",
+                    "LevelInfo": "Info",
+                    "LevelWarn": "Warning",
+                    "LevelError": "Error",
+                    "AutoRefresh": "Auto-refresh",
+                    "Refresh": "Refresh",
+                    "Copy": "Copy",
+                    "Copied": "Copied to clipboard",
+                    "Clear": "Clear",
+                    "Cleared": "Logs cleared",
+                    "OpenFolder": "Open log folder",
+                    "Empty": "No log entries yet."
+                }
             }
         },
         "ja": {
@@ -384,7 +444,37 @@
                 },
                 "Next": "次へ",
                 "Back": "戻る",
-                "Save": "保存"
+                "Save": "保存",
+                "Tabs": {
+                    "Setup": "Setup",
+                    "Settings": "Settings",
+                    "Logs": "Logs"
+                },
+                "Settings": {
+                    "PollInterval": "Polling interval",
+                    "PollIntervalHint": "How often to ask Spotify for the current track. Lower = more responsive but risks rate-limiting.",
+                    "Seconds": "{n}s",
+                    "Save": "Save settings",
+                    "Saved": "Settings saved",
+                    "RateLimited": "Currently rate-limited by Spotify until {time}",
+                    "AuthBanner": "Connect Spotify on the Setup tab to enable playback control."
+                },
+                "Logs": {
+                    "Title": "Plugin logs",
+                    "Filter": "Filter",
+                    "LevelAll": "All",
+                    "LevelInfo": "Info",
+                    "LevelWarn": "Warning",
+                    "LevelError": "Error",
+                    "AutoRefresh": "Auto-refresh",
+                    "Refresh": "Refresh",
+                    "Copy": "Copy",
+                    "Copied": "Copied to clipboard",
+                    "Clear": "Clear",
+                    "Cleared": "Logs cleared",
+                    "OpenFolder": "Open log folder",
+                    "Empty": "No log entries yet."
+                }
             }
         },
         "fr": {
@@ -450,7 +540,37 @@
                 },
                 "Next": "Suivant",
                 "Back": "Retour",
-                "Save": "Enregistrer"
+                "Save": "Enregistrer",
+                "Tabs": {
+                    "Setup": "Setup",
+                    "Settings": "Settings",
+                    "Logs": "Logs"
+                },
+                "Settings": {
+                    "PollInterval": "Polling interval",
+                    "PollIntervalHint": "How often to ask Spotify for the current track. Lower = more responsive but risks rate-limiting.",
+                    "Seconds": "{n}s",
+                    "Save": "Save settings",
+                    "Saved": "Settings saved",
+                    "RateLimited": "Currently rate-limited by Spotify until {time}",
+                    "AuthBanner": "Connect Spotify on the Setup tab to enable playback control."
+                },
+                "Logs": {
+                    "Title": "Plugin logs",
+                    "Filter": "Filter",
+                    "LevelAll": "All",
+                    "LevelInfo": "Info",
+                    "LevelWarn": "Warning",
+                    "LevelError": "Error",
+                    "AutoRefresh": "Auto-refresh",
+                    "Refresh": "Refresh",
+                    "Copy": "Copy",
+                    "Copied": "Copied to clipboard",
+                    "Clear": "Clear",
+                    "Cleared": "Logs cleared",
+                    "OpenFolder": "Open log folder",
+                    "Empty": "No log entries yet."
+                }
             }
         },
         "de": {
@@ -516,7 +636,37 @@
                 },
                 "Next": "Weiter",
                 "Back": "Zurück",
-                "Save": "Speichern"
+                "Save": "Speichern",
+                "Tabs": {
+                    "Setup": "Einrichtung",
+                    "Settings": "Einstellungen",
+                    "Logs": "Protokoll"
+                },
+                "Settings": {
+                    "PollInterval": "Aktualisierungsintervall",
+                    "PollIntervalHint": "Wie oft beim Spotify-Server der aktuelle Titel abgefragt wird. Niedriger = reaktionsschneller, aber Risiko für Rate-Limits.",
+                    "Seconds": "{n}s",
+                    "Save": "Einstellungen speichern",
+                    "Saved": "Einstellungen gespeichert",
+                    "RateLimited": "Aktuell von Spotify gedrosselt bis {time}",
+                    "AuthBanner": "Verbinde Spotify im Einrichtungs-Tab, um Wiedergabe zu steuern."
+                },
+                "Logs": {
+                    "Title": "Plugin-Protokoll",
+                    "Filter": "Filter",
+                    "LevelAll": "Alle",
+                    "LevelInfo": "Info",
+                    "LevelWarn": "Warnung",
+                    "LevelError": "Fehler",
+                    "AutoRefresh": "Auto-Aktualisierung",
+                    "Refresh": "Aktualisieren",
+                    "Copy": "Kopieren",
+                    "Copied": "In Zwischenablage kopiert",
+                    "Clear": "Leeren",
+                    "Cleared": "Protokoll geleert",
+                    "OpenFolder": "Log-Ordner öffnen",
+                    "Empty": "Keine Einträge."
+                }
             }
         }
     }
